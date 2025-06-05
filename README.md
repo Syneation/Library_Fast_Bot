@@ -2,10 +2,13 @@
 # Documentation
 
 ## first you need install library telegram 
-## pip install python-telegram-bot 
-## then from Library_Fast_Bot import bot
-## in bot.token = "your token"
-## at the end, you need to add - bot.run()
+pip install python-telegram-bot 
+## then 
+from Library_Fast_Bot import bot
+## then 
+bot.token = "your token"
+## at the end, you need to add 
+bot.run()
 
 ## example code
 from Library_Fast_Bot import bot
