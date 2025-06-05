@@ -15,11 +15,10 @@ from telegram.ext import (
     CallbackQueryHandler
 )
 import os
-from typing import Dict, List, Tuple, Optional, Union, Any
+from typing import Dict, List, Tuple, Optional, Union, Any, Callable
 
 
 class TelegramBot:
-
     debug_user_data = False
 
     def __init__(self, token: Optional[str] = None):
@@ -28,13 +27,17 @@ class TelegramBot:
         self.start_message = "Hello! I'm a bot."
         self.start_markup: Optional[InlineKeyboardMarkup] = None
         self.reply_markup: Optional[ReplyKeyboardMarkup] = None
-        self.message_handlers: Dict[str, str] = {}
-        self.button_handlers: Dict[str, Dict[str, Any]] = {}
-        self.reply_keyboards: Dict[str, Dict[str, Any]] = {}
-        self.commands: Dict[str, str] = {}
+        self.message_handlers: Dict[str, Union[str, Callable]] = {}
+        self.button_handlers: Dict[str, Union[str, Tuple[str, List[Tuple[str, str]]], Callable]] = {}
+        self.reply_keyboards: Dict[str, List[Tuple[str, str]]] = {}
+        self.commands: Dict[str, Union[str, Callable]] = {}
         self.command_hints: Dict[str, str] = {}
-        self.reply_messages: Dict[str, Dict[str, Any]] = {}
-        self.back_handlers: Dict[str, Dict[str, Any]] = {}  # Stores custom back handlers
+        self.reply_messages: Dict[str, Union[str, Callable]] = {}
+        self.button_history: Dict[int, List[Dict[str, Any]]] = {}
+        self.global_response: Optional[Union[str, Callable]] = None
+        self.application: Optional[Application] = None
+        self.last_message: Optional[str] = None
+        self.message_checkers: Dict[str, Callable] = {}
 
     def clickStartBot(self, text: str) -> None:
         """Set simple start message without buttons."""
@@ -42,14 +45,9 @@ class TelegramBot:
         self.start_markup = None
         self.reply_markup = None
 
-    def clickStartBotUnderBtn(self, **kwargs) -> None:
-        """
-        Set start message with inline buttons under it.
-        Usage: text="Message", option1="callback1", option2="callback2", ...
-        """
-        self.start_message = kwargs.get('text', "Hello! I'm a bot.")
-        buttons = [(k, v) for k, v in kwargs.items() if k != 'text']
-
+    def clickStartBotUnderBtn(self, text: str, *buttons: Tuple[str, str]) -> None:
+        """Set start message with inline buttons under it."""
+        self.start_message = text
         if buttons and len(buttons) <= 6:
             keyboard = [
                 [InlineKeyboardButton(btn_text, callback_data=callback_data)]
@@ -57,131 +55,132 @@ class TelegramBot:
             ]
             self.start_markup = InlineKeyboardMarkup(keyboard)
             for _, callback_data in buttons:
-                self.button_handlers[callback_data] = {"text": f"You chose {callback_data}"}
+                self.button_handlers[callback_data] = callback_data
         else:
             self.start_markup = None
 
-    def clickStartBotBtn(self, **kwargs) -> None:
+    def clickStartBotBtn(self, text: str, *buttons: Union[str, Tuple[str, str]]) -> None:
         """
         Set start message with reply keyboard buttons.
-        Usage: text="Message", option1=dict(text="Answer1", buttons=[...]),
-               option2="Answer2", ...
+        Buttons can be either simple (text) or with follow-up buttons (text, response, buttons).
         """
-        self.start_message = kwargs.get('text', "Hello! I'm a bot.")
-        buttons = []
-
-        for btn_text, value in kwargs.items():
-            if btn_text == 'text':
-                continue
-
-            if isinstance(value, str):
-                # Simple button: "option": "answer"
-                buttons.append((btn_text, value))
-                self.reply_messages[btn_text.lower()] = {"text": value}
-            elif isinstance(value, dict):
-                # Advanced button: "option": {"text": "...", "buttons": [...]}
-                buttons.append((btn_text, value.get('text', btn_text)))
-                self.reply_messages[btn_text.lower()] = value
-
-                # Add back button to nested keyboards
-                if 'buttons' in value:
-                    if 'back_handler' in value:
-                        back_data = f"back_{value['back_handler']}"
-                        value['buttons'].append(("Back", back_data))
-                    else:
-                        value['buttons'].append(("Back", "previous_menu"))
-
+        self.start_message = text
         if buttons and len(buttons) <= 6:
             keyboard = [
-                [KeyboardButton(btn_text)]
-                for btn_text, _ in buttons[:6]
+                [KeyboardButton(btn_text if isinstance(btn_text, str) else btn_text[0])]
+                for btn_text in buttons[:6]
             ]
             self.reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+
+            for button in buttons:
+                if isinstance(button, tuple) and len(button) >= 2:
+                    btn_text, response = button[:2]
+                    self.reply_messages[btn_text.lower()] = response
+
+                    if len(button) == 3 and isinstance(button[2], list):
+                        self.reply_keyboards[response] = button[2]
+                        for sub_btn, sub_response in button[2]:
+                            self.reply_messages[sub_btn.lower()] = sub_response
         else:
             self.reply_markup = None
 
-    def back_btn(self, back_id: str, return_text: str, buttons: List[Tuple[str, str]]) -> None:
+    def if_message(self, message_text: str, response: Optional[Union[str, Callable]] = None) -> bool:
         """
-        Define custom back button behavior.
-        Usage: back_btn("back1", "Main menu:", [("Option 1", "Response 1"), ("Option 2", "Response 2")])
+        Dual function:
+        1. If response is specified - registers a handler (text or callback)
+           Callback signature: func(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str
+        2. Returns True if the last message matches message_text
         """
-        self.back_handlers[f"back_{back_id}"] = {
-            "text": return_text,
-            "buttons": buttons
-        }
+        if response is not None:
+            self.message_handlers[message_text.lower()] = response
 
-    def add_button(self, **kwargs) -> None:
+        if self.last_message is None:
+            return False
+        return self.last_message.lower() == message_text.lower()
+
+    def add_message_checker(self, message_text: str, callback: Callable) -> None:
+        """Adds a custom check for a message"""
+        self.message_checkers[message_text.lower()] = callback
+
+    def add_button(self, button_text: str, after_message: str, response: Union[str, Callable],
+                   update: Optional[Update] = None, context: Optional[ContextTypes.DEFAULT_TYPE] = None) -> None:
         """
-        Add button with nested options and back functionality.
-        Usage: trigger="trigger text",
-               option1=dict(text="Answer1", buttons=[...], back_handler="back1"),
-               option2="Answer2",
-               ...
+        Улучшенный метод добавления кнопки с возможностью немедленного обновления интерфейса
+
+        Args:
+            button_text: Текст на кнопке
+            after_message: Сообщение, после которого показывается кнопка
+            response: Ответ при нажатии (текст или функция)
+            update: Объект Update (если нужно немедленное обновление)
+            context: Объект Context (если нужно немедленное обновление)
         """
-        trigger = kwargs.get('trigger', '').lower()
-        if not trigger:
-            return
+        # Добавляем кнопку в систему
+        if after_message not in self.reply_keyboards:
+            self.reply_keyboards[after_message] = []
 
-        if trigger not in self.reply_keyboards:
-            self.reply_keyboards[trigger] = {"buttons": []}
+        self.reply_keyboards[after_message].append((button_text, response))
+        self.reply_messages[button_text.lower()] = response
 
-        for btn_text, value in kwargs.items():
-            if btn_text == 'trigger':
-                continue
+        # Если переданы update и context - обновляем интерфейс немедленно
+        if update is not None and context is not None:
+            self._update_interface(update, context)
 
-            if isinstance(value, str):
-                # Simple button: "option": "answer"
-                self.reply_keyboards[trigger]["buttons"].append((btn_text, value))
-                self.reply_messages[btn_text.lower()] = {"text": value}
-            elif isinstance(value, dict):
-                # Advanced button with nested options
-                self.reply_keyboards[trigger]["buttons"].append((btn_text, value.get('text', btn_text)))
-                self.reply_messages[btn_text.lower()] = value
+    def _update_interface(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Внутренний метод для обновления интерфейса"""
+        current_text = update.message.text
+        if current_text in self.reply_keyboards:
+            buttons = self.reply_keyboards[current_text]
+            keyboard = [[KeyboardButton(btn)] for btn, _ in buttons]
+            reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+            update.message.reply_text(
+                "Интерфейс обновлен:",
+                reply_markup=reply_markup
+            )
 
-                # Add back button to nested keyboards
-                if 'buttons' in value:
-                    if 'back_handler' in value:
-                        back_data = f"back_{value['back_handler']}"
-                        value['buttons'].append(("Back", back_data))
-                    else:
-                        value['buttons'].append(("Back", "previous_menu"))
-
-    def if_message(self, received_text: str, response_text: str) -> None:
-        """Add handler for specific text messages."""
-        self.message_handlers[received_text.lower()] = response_text
-
-    def add_command(self, command: str, response: str) -> None:
-        """Add handler for bot command."""
+    def add_command(self, command: str, response: Union[str, Callable]) -> None:
+        """Add handler for bot command (text or callback)."""
         self.commands[command] = response
+        if command not in self.command_hints:
+            self.command_hints[command] = response[:100] if isinstance(response, str) else command
 
     def add_hint_command(self, command: str, hint: str) -> None:
         """Add description for bot command (shown in /help)."""
         self.command_hints[command] = hint
+        if command not in self.commands:
+            self.commands[command] = ""
+
+    async def _process_response(self, response: Union[str, Callable],
+                                update: Update,
+                                context: ContextTypes.DEFAULT_TYPE) -> str:
+        """Process response that can be either text or callback."""
+        if callable(response):
+            return response(update, context)
+        return response
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle /start command."""
+        user_id = update.effective_user.id
+        self.button_history[user_id] = []
+
+        await self.setup_commands_menu(context.bot)
+
+        reply_text = await self._process_response(self.start_message, update, context)
+
         if self.start_markup:
-            await update.message.reply_text(
-                self.start_message,
-                reply_markup=self.start_markup
-            )
+            await update.message.reply_text(reply_text, reply_markup=self.start_markup)
         elif self.reply_markup:
-            await update.message.reply_text(
-                self.start_message,
-                reply_markup=self.reply_markup
-            )
+            await update.message.reply_text(reply_text, reply_markup=self.reply_markup)
         else:
-            await update.message.reply_text(self.start_message)
+            await update.message.reply_text(reply_text)
 
     async def button_click(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle inline button clicks."""
         query = update.callback_query
         await query.answer()
         callback_data = query.data
+        user = query.from_user
 
-        # Print user info to console
-        if (bot.debug_user_data):
-            user = update.effective_user
+        if self.debug_user_data:
             user_info = (
                 f"User clicked button: {callback_data}\n"
                 f"Name: {user.full_name}\n"
@@ -191,40 +190,37 @@ class TelegramBot:
             print(user_info)
             print("=" * 50 + "\n")
 
-        # Handle custom back buttons
-        if callback_data.startswith("back_"):
-            if callback_data in self.back_handlers:
-                back_data = self.back_handlers[callback_data]
-                keyboard = [
-                    [InlineKeyboardButton(btn_text, callback_data=callback)]
-                    for btn_text, callback in back_data["buttons"]
-                ]
-                await query.edit_message_text(
-                    text=back_data["text"],
-                    reply_markup=InlineKeyboardMarkup(keyboard))
-                return
-
-        # Handle standard back button
         if callback_data == "previous_menu":
-            await query.edit_message_text(
-                text=self.start_message,
-                reply_markup=self.start_markup)
+            if user.id in self.button_history and self.button_history[user.id]:
+                previous_state = self.button_history[user.id].pop()
+                await query.edit_message_text(
+                    text=previous_state['text'],
+                    reply_markup=previous_state['markup']
+                )
+                return
+            await query.edit_message_text(text="You're at the main menu")
             return
 
         if callback_data in self.button_handlers:
             response = self.button_handlers[callback_data]
+            if user.id not in self.button_history:
+                self.button_history[user.id] = []
 
-            if isinstance(response, dict) and 'buttons' in response:
-                # Show buttons
-                keyboard = [[InlineKeyboardButton(btn, callback_data=data)]
-                            for btn, data in response['buttons']]
+            self.button_history[user.id].append({
+                'text': query.message.text,
+                'markup': query.message.reply_markup
+            })
+
+            if isinstance(response, tuple):
+                text, buttons = response
+                reply_text = await self._process_response(text, update, context)
+                keyboard = [[InlineKeyboardButton(btn, callback_data=data)] for btn, data in buttons]
                 await query.edit_message_text(
-                    text=response.get('text', callback_data),
+                    text=reply_text,
                     reply_markup=InlineKeyboardMarkup(keyboard))
             else:
-                # Simple text response
-                await query.edit_message_text(
-                    text=response.get('text', callback_data))
+                reply_text = await self._process_response(response, update, context)
+                await query.edit_message_text(text=reply_text)
         else:
             await query.edit_message_text(text="Unknown command")
 
@@ -232,20 +228,21 @@ class TelegramBot:
         """Handle bot commands."""
         command = update.message.text[1:].split()[0].lower()
         if command in self.commands:
-            await update.message.reply_text(self.commands[command])
+            response = await self._process_response(self.commands[command], update, context)
+            await update.message.reply_text(response)
         else:
             await update.message.reply_text("Unknown command")
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle all text messages."""
-        user_text = update.message.text.lower()
+        user_text = update.message.text
+        self.last_message = user_text
+        user_text_lower = user_text.lower()
         user = update.effective_user
 
-        # Print user info to console
-        if (bot.debug_user_data):
-            # Print user info to console
+        if self.debug_user_data:
             user_info = (
-                f"User sent message: {update.message.text}\n"
+                f"User sent message: {user_text}\n"
                 f"Name: {user.full_name}\n"
                 f"Username: @{user.username}" if user.username else "Username: Not specified"
             )
@@ -253,82 +250,107 @@ class TelegramBot:
             print(user_info)
             print("=" * 50 + "\n")
 
-        # Handle back button
-        if user_text == "back" or user_text == "previous_menu":
-            if self.reply_markup:
-                await update.message.reply_text(
-                    self.start_message,
-                    reply_markup=self.reply_markup)
-            else:
-                await update.message.reply_text(self.start_message)
+        # Handle global response
+        if self.global_response is not None:
+            response = await self._process_response(self.global_response, update, context)
+            await update.message.reply_text(response)
             return
 
-        # Check exact matches first
-        if user_text in self.reply_messages:
-            response = self.reply_messages[user_text]
+        if user_text_lower in self.message_checkers:
+            await self.message_checkers[user_text_lower](update, context)
+            return
 
-            if isinstance(response, dict) and 'buttons' in response:
-                # Show buttons
-                buttons = response['buttons']
+        # Handle back button
+        if user_text_lower in ("back", "previous_menu"):
+            if user.id in self.button_history and self.button_history[user.id]:
+                previous_state = self.button_history[user.id].pop()
+                await update.message.reply_text(
+                    text=previous_state.get('text', "Previous menu"),
+                    reply_markup=previous_state.get('markup')
+                )
+                return
+            await update.message.reply_text("You're at the main menu")
+            return
+
+        # Handle exact matches
+        if user_text_lower in self.reply_messages:
+            response = await self._process_response(self.reply_messages[user_text_lower], update, context)
+
+            if user.id not in self.button_history:
+                self.button_history[user.id] = []
+
+            self.button_history[user.id].append({
+                'text': user_text,
+                'markup': update.message.reply_markup
+            })
+
+            if response in self.reply_keyboards:
+                buttons = self.reply_keyboards[response]
                 keyboard = [[KeyboardButton(btn)] for btn, _ in buttons]
                 await update.message.reply_text(
-                    response.get('text', "Please choose:"),
+                    response,
                     reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True))
             else:
-                # Simple text response
-                answer = response.get('text', response) if isinstance(response, dict) else response
-                await update.message.reply_text(answer)
+                await update.message.reply_text(response)
             return
 
-        # Check trigger messages
-        for trigger, data in self.reply_keyboards.items():
-            if trigger.lower() in user_text:
-                buttons = data.get('buttons', [])
+        # Handle trigger messages
+        for trigger_msg, buttons in self.reply_keyboards.items():
+            if trigger_msg.lower() in user_text_lower:
+                if user.id not in self.button_history:
+                    self.button_history[user.id] = []
+
+                self.button_history[user.id].append({
+                    'text': user_text,
+                    'markup': update.message.reply_markup
+                })
+
                 keyboard = [[KeyboardButton(btn)] for btn, _ in buttons]
                 await update.message.reply_text(
-                    data.get('text', "Please choose:"),
+                    "Please choose:",
                     reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True))
                 return
 
-        # Check other message handlers
-        if user_text in self.message_handlers:
-            await update.message.reply_text(self.message_handlers[user_text])
+        # Handle other message handlers
+        if user_text_lower in self.message_handlers:
+            response = await self._process_response(self.message_handlers[user_text_lower], update, context)
+            await update.message.reply_text(response)
         else:
             await update.message.reply_text("I don't understand this command.")
 
-    async def setup_commands(self, application: Application) -> None:
+    async def setup_commands_menu(self, bot) -> None:
         """Set up bot commands menu."""
         if self.command_hints:
-            commands = [
-                BotCommand(command, description)
-                for command, description in self.command_hints.items()
-            ]
-            await application.bot.set_my_commands(commands)
+            commands = [BotCommand(command, description) for command, description in self.command_hints.items()]
+            await bot.set_my_commands(commands)
+
+    async def setup_commands(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Command handler to setup commands menu."""
+        await self.setup_commands_menu(context.bot)
+        await update.message.reply_text("Commands menu has been updated.")
 
     def run(self) -> None:
         """Start the bot."""
         if not self.token:
             raise ValueError("Token is not set!")
-        application = Application.builder().token(self.token).build()
+        self.application = Application.builder().token(self.token).build()
 
-        # Add handlers
-        application.add_handler(CommandHandler("start", self.start))
+        self.application.add_handler(CommandHandler("start", self.start))
+        self.application.add_handler(CommandHandler("setup", self.setup_commands))
 
         if self.commands:
-            application.add_handler(MessageHandler(filters.COMMAND, self.handle_command))
+            self.application.add_handler(MessageHandler(filters.COMMAND, self.handle_command))
 
         if self.button_handlers:
-            application.add_handler(CallbackQueryHandler(self.button_click))
+            self.application.add_handler(CallbackQueryHandler(self.button_click))
 
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
-
-        # Set up commands menu
-        application.add_handler(CommandHandler("setup", self.setup_commands))
+        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
 
         print("Bot is starting...")
-        application.run_polling()
+        self.application.run_polling()
 
-# Создаем экземпляр бота для экспорта
+
+# Create bot instance for export
 if __name__ == "__main__":
     bot = TelegramBot()
     bot.run()
