@@ -1,4 +1,5 @@
 # Library_Fast_Bot
+# created with DeepSeek (only DeepSeek write code and documentation, I just came up with an idea.)
 # Documentation
 
 ## first you need install library telegram 
