@@ -230,9 +230,9 @@ bot.token = "ваш токен"
 
 в конце вам нужно добавить
 bot.run()
-
-пример кода
-из Library_Fast_Bot импортируйте бота-бота.токен = "ваш токен" bot.clickStartBot("ваш текст") bot.run()
+приимер кода
+from Library_Fast_Botи import bot
+ bot.token = "ваш токен" bot.clickStart("ваш текст") bot.run()
 
 Обзор
 
