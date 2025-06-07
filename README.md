@@ -15,7 +15,7 @@ bot.run()
 ## example code
 from Library_Fast_Bot import bot
 bot.token = "yout Token"
-bot.clickStartBot("your text")
+bot.clickStart("your text")
 bot.run()
 
 
