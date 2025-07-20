@@ -1,394 +1,283 @@
-# EN
 # Library_Fast_Bot
-# created with DeepSeek (only DeepSeek write code and documentation, I just came up with an idea.)
+# EN 
+# This bot is designed to easily create a telegram bot. 
+# why do I need a library?
+## if you know any library for a telegram bot, but don't want to write a lot of code for a simple bot, or if you don't know any library for a telegram bot or programming language, but want to create a simple bot, you can use this library (but you'll have to do a little bit study the documentation)
+
 # Documentation
 
-## first you need install library telegram 
-pip install python-telegram-bot 
-## then 
+# what do you need to get started
+
+## install pycharm or any python ide
+## create a new project
+## install the telegram bot library 
+```
+pip install python-telegram-bot
+```
+## move the library to the project folder
+in the file with your code that you need to add. 
+```
 from Library_Fast_Bot import bot
-## then 
-bot.token = "your token"
-## at the end, you need to add 
+bot.token = "YOUR TOKEN"
+#here is your code
 bot.run()
-
-## example code
-from Library_Fast_Bot import bot
-bot.token = "yout Token"
-bot.clickStart("your text")
-bot.run()
-
-
-Overview
-
-The TelegramBot class provides a comprehensive framework for building Telegram bots with support for:
-
-    Command handling
-
-    Inline keyboards
-
-    Reply keyboards
-
-    User sessions
-
-    Button navigation history
-
-    Message handlers
-
-Initialization
-python
-
-bot = TelegramBot(token=None)
-
-    token: Optional Telegram bot token (can also be set via TELEGRAM_BOT_TOKEN environment variable)
-
-Basic Configuration
-Start Message
-python
-
-# Simple start message
-bot.clickStart("Hello! I'm a bot.")
-
-# Start with inline buttons
-bot.clickStartUnderBtn("Welcome!", ("Button 1", "callback1"), ("Button 2", "callback2"))
-
-# Start with reply keyboard
-bot.clickStartBtn("Main Menu", "Option 1", "Option 2")
-
-Command Handling
-Add Commands
-python
-
-# Add command with response
-bot.add_command("help", "Here's some help information")
-
-# Add command with callback
-bot.add_command("info", lambda update, ctx: "Info response")
-
-# Add command description (for /help)
-bot.add_hint_command("help", "Get help information")
-
-Remove Commands
-python
-
-# Remove specific command
-bot.clearCommand("help")
-
-# Remove all commands
-bot.clearCommand()
-
-Message Handling
-Text Message Responses
-python
-
-# Respond to exact message match
-bot.if_message("hello", "Hi there!")
-
-# Respond with callback
-bot.if_message("time", lambda update, ctx: f"Current time: {datetime.now()}")
-
-Global Fallback Response
-python
-
-# Handle any unmatched message
-bot.global_response = "I didn't understand that"
-
-Button Management
-Inline Buttons
-python
-
-# Add buttons under specific message
-bot.add_buttonUnderMessage("Select option:", 
-                         ("Option 1", "opt1"), 
-                         ("Option 2", "opt2"))
-
-# Or using add_button
-bot.add_button("Button Text", "response", 
-              after_message="trigger message", 
-              inline=True)
-
-Reply Keyboard Buttons
-python
-
-# Add reply keyboard buttons
-bot.add_button("Button Text", "response", 
-              after_message="trigger message")
-
-Button Handlers
-python
-
-# Handle button clicks
-bot.button_handlers["opt1"] = "You chose Option 1"
-bot.button_handlers["opt2"] = lambda update, ctx: "Callback response"
-
-Remove Buttons
-python
-
-# Remove all buttons
-bot.clearBtn()
-
-# Remove buttons under specific message
-del_btn = bot.del_btn("message text")
-await del_btn(update, context)
-
-# Remove reply keyboard
-del_keyboard = bot.del_reply_keyboard()
-await del_keyboard(update, context)
-
-User Sessions
-python
-
-# Store user data
-bot.set_user_data(user_id, "key", "value")
-
-# Retrieve user data
-value = bot.get_user_data(user_id, "key", default=None)
-
-Button Groups
-python
-
-# Create button group
-bot.create_button_group("options")
-
-# Add button to group
-callback = bot.add_to_button_group("options", "Choice 1", "response1")
-
-Advanced Features
-Navigation History
-
-The bot automatically maintains button navigation history for each user, allowing "back" functionality.
-Error Handling
-
-The bot includes built-in error handling that ignores empty text errors.
-Debug Mode
-python
-
-bot.debug_user_data = True  # Prints user interaction info
-
-Running the Bot
-python
-
-# Start the bot
-bot.run()
-
-Example Usage
-python
-
-# Initialize bot
-bot = TelegramBot()
-
-# Configure start message with buttons
-bot.clickStartUnderBtn("Welcome to my bot!",
-                      ("Help", "help_btn"),
-                      ("Info", "info_btn"))
-
-# Add button handlers
-bot.button_handlers["help_btn"] = "Help information here"
-bot.button_handlers["info_btn"] = lambda update, ctx: f"Bot info at {datetime.now()}"
-
-# Add command
-bot.add_command("start", "Restarting bot...")
-bot.add_hint_command("start", "Restart the bot")
-
-# Add message handler
-bot.if_message("hello", "Hi there!")
-
-# Run the bot
-bot.run()
-
-Notes
-
-    The bot automatically handles:
-
-        Command registration with Telegram
-
-        Button click events
-
-        Message parsing
-
-        User session management
-
-    All text comparisons are case-insensitive.
-
-    The framework includes protection against empty message errors.
-
-## at the end, you need to add - bot.run()
-created with DeepSeek
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+this is the basic structure for running a bot, where it says #here is your code, which you can write using the functions of my library and just python code.
+## and now you can use the library
+
+# after pressing the "Start" button.
+```
+bot.start_bot("message") # simply outputs a message to the chat after writing the command (/start) or when the start
+bot button is pressed.start_bot_btn("message", [("button 1", func), ("button 2", functionwo)]) # after the /start command, it outputs a message with the usual buttons (the functions specify what to do after pressing the button)
+bot.start_bot_btn_inline("message", [("button 3", funcThree), ("button 4", funcFour)]) # after the /start command, it displays a message with inline buttons (the functions specify what to do after pressing the button)
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+- ( start_bot() ) -> after pressing the "Start" button, a message is displayed
+- ( start_bot_btn() ) -> after clicking, a message is displayed, as well as buttons
+- ( start_bot_btn_inline() ) -> after clicking, a message is displayed, as well as inline buttons (if you specify bot.add_buttons_inline() in the function -> then you will change the message to a new one )
+
+# adding buttons (add_buttons() / add_buttons_inline() )
+```
+bot.add_buttons("message 1", [("button 1", func), ("button 2", functionwo)]) # when writing this function, 2 regular buttons are created (up to 16 can be created)
+bot.add_buttons_inline("message 2", [("button3", funcThree), ("button4", funcFour)]) # when writing this function, 2 inline buttons are created 
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+- add buttons better in functions
+- bot.add_buttons() -> when writing this function, 2 regular buttons are created (up to 16 can be created) -> when clicked, the functions will be called
+- bot.add_buttons_inline() -> when writing this function, 2 inline buttons are created -> when clicked, the functions will be called (if the function has add_buttons_inline(), then the text will change)
+
+# if_message
+```
+#1 Lambda
+bot.if_message("message", lambda: print("lambda message response"))
+
+#2 Test the response
+bot.if_message ("message", "reply to message")
+
+#3 Registering
+the def test() function:
+print("reply to message")
+...
+
+bot.if_message("message", test)
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+these are all if_message commands that you can use (write functions without -> () )
+
+# use_def_msg, set_default_message
+```
+# sending a telegram chat message (simple reply, no reply to the message)
+bot.set_default_message("your text", True, False) # last False optional
+
+# sending a telegram chat message (with a reply to the message)
+bot.set_default_message("your text", True, True)
+
+# sending a message to the console
+bot.set_default_message("your text", False) # the last False is optional
+
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+commands to output a message with an unknown command
+
+# debug_user_data
+```
+bot.debug_LBF_and_code = True # if you want the errors that try except catches to be output to the console
+bot.debug_user_data = True # if you want to get information about the user in the console every time
+
+# you can also get the user's data in string format using the
+following print(bot.get_user_name) commands # getting the user's name
+
+print(bot.get_user_id) # get the user id
+
+print(bot.get_user_username()) # get the user's username
+
+print(bot.get_user_full_name()) # get the full username
+
+print(bot.get_user_info()) # output to the console User, ID, Chat_id, Username -> only then, you will call the function
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+- a command to output data about users (ID, full name and username)
+- when you use bot.debug_user_data = True, your console will display User, ID, Chat_id and Username
+
+# send_message / answer_message
+```
+def testOne():
+    print("GOOD")
+    bot.send_message("TEST1")
+
+async def testTwo(update: Update, context: : ContextTypes.DEFAULT_TYPE):
+    bot.send_message("TEST2")
+
+def optTwo():
+    bot.answer_message("GOOD2")
+
+def optTest():
+  bot.send_message("msg", 123)
+
+bot.start_bot_btn("Hello :)", ["opt", "opt2"])
+
+bot.if_message("opt", testOne)
+bot.if_message("t2", TestTwo)
+bot.if_message("opt2", optTwo)
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+- send_message -> function for sending a message to a chat 
+- answer_message -> function to send a message to the chat with a reply to the user's messages  
+- (you can use the usual functions to use send_message() and answer_message() and also with the update, context parameters)
+- bot.send_message("msg", 123) sending a message only to this chat id (123 <- chat id)
+
+# adding commands and hints for them (add_command() / add_hint_command())
+```
+add_command("command1", "command 1 does something") # now, when writing /command1, a message will be displayed that is in 2nd quotes (you can also write a function ONLY WITHOUT -> () )
+add_command("command2", func)
+
+add_hint_command("command1", "hint for command 1") # now, when you click on the menu button, a prompt for command1 will appear, in the 2nd quotation marks it will show what the command is doing
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+functions for creating commands
+
+
+# The bot is designed to quickly write small telegram bots.
 
 # RU
-Library_Fast_Bot
-создан с помощью DeepSeek (только в DeepSeek пишут код и документацию, мне просто пришла в голову идея.)
-Документация
-сначала вам нужно установить библиотеку telegram
-pip, установить python-telegram-bot
+# Этот бот предназначен для простого создания telegram-бота. 
+# зачем мне нужна библиотека?
+## если вы знаете какую-либо библиотеку для telegram-бота, но не хотите писать много кода для простого бота, или если вы не знаете никакой библиотеки для telegram-бота или язык программирования, но хотите создать простого бота, вы можете использовать эту библиотеку (но придется немного изучить документацию)
+
+# Документация
+
+# что вам нужно для начала работы
+
+## установите pycharm или любую ide python
+## создайте новый проект
+## установите библиотеку telegram-бота 
+```
+pip install python-telegram-bot
+```
+## переместите библиотеку в папку проекта
+в файле с вашим кодом, который вам нужно добавить. 
+```
+  from Library_Fast_Bot import bot
+  bot.token = "ВАШ ТОКЕН"
+  #здесь ваш код
+  bot.run()
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+это базовая структура для запуска бота, где написано #здесь ваш код, который вы можете написать, используя функции моей библиотеки и просто код на python.
+## и теперь вы можете использовать библиотеку
+
+# после нажатия кнопки "Старт".
+```
+bot.start_bot("сообщение") # просто выводит в чат сообщение, после написание команды (/start) или когда нажата кнопка start
+bot.start_bot_btn("сообщение", [("кнопка 1", func), ("кнопка 2", funcTwo)]) # после команды /start выводит сообщение с обычными кнопками (в функциях указывается, что делать после нажатие кнопки)
+bot.start_bot_btn_inline("сообщение", [("кнопка 3", funcThree), ("кнопка 4", funcFour)]) # после команды /start выводит сообщение с inline кнопками (в функциях указывается, что делать после нажатие кнопки) 
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+- ( start_bot() ) -> после нажатия кнопки "Старт" выводиться сообщение
+- ( start_bot_btn() ) -> после нажатие выводиться сообщение, а также и кнопки
+- ( start_bot_btn_inline() ) -> после нажатие выводиться сообщение, а также и inline кнопки (если в функции вы укажите bot.add_buttons_inline() -> тогда у вас поменяется сообщение на новое )
+
+# добавление кнопок (add_buttons() / add_buttons_inline() )
+```
+bot.add_buttons("сообщение 1", [("кнопка1", func), ("кнопка2", funcTwo)]) # при написание этой функции создются 2 обычный кнопки (можно создать до 16)
+bot.add_buttons_inline("сообщение 2", [("кнопка3", funcThree), ("кнопка4", funcFour)]) # при написание этой функции создются 2 inline кнопки 
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+- кнопки добавляить лучше в функциях
+- bot.add_buttons() -> при написание этой функции создются 2 обычный кнопки (можно создать до 16) -> при нажатие на которых, будут вызыватся функции
+- bot.add_buttons_inline() -> при написание этой функции создются 2 inline кнопки -> при нажатие на которых, будут вызыватся функции (если в функции будет add_buttons_inline() тогда текст поменяется)
+
+# if_message
+```
+#1 Лямбда
+bot.if_message("сообщение", lambda: print("ответ на сообщение в виде лямбды"))
+
+#2 Протестируйте ответ
+bot.if_message ("сообщение", "ответ на сообщение")
+
+#3 Регистрация функции
+def test():
+    print("ответ на сообщение")
+    ...
+
+bot.if_message("сообщение", test)
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+это все команды if_message которые вы можете использовать ( функции писать без -> () )
+
+# use_def_msg, set_default_message
+```
+# отправка сообщение в чат телеграмм (простой ответ, без ответа на сообщение)
+bot.set_default_message("ваш текст", True, False) # последний False не обязателен
+
+# отправка сообщение в чат телеграмм (с ответом на сообщение)
+bot.set_default_message("ваш текст", True, True)
+
+# отправка сообщение в консоль
+bot.set_default_message("ваш текст", False) # последний False не обязателен
+
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+команды для вывода сообщение при неизвестной команды
+
+# debug_user_data
+```
+bot.debug_LBF_and_code = True # если хотите, чтобы ошибки которые ловит try except выводились в консоль
+bot.debug_user_data = True # если хотите получать каждый раз информацию о пользователе в консоле
+
+# также вы можете получить данные пользователя в формате string с помощью таких команд
+print(bot.get_user_name) # получение имя пользователя
+
+print(bot.get_user_id) # получить id пользователя
+
+print(bot.get_user_username()) # получить username пользователя
+
+print(bot.get_user_full_name()) # получить полное имя пользователя
+
+print(bot.get_user_info()) # вывести в консоль User, ID, Chat_id, Username -> только тогда, вы вызовите функцию
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+- команда для вывода данных о пользователи (ID, full name and username)
+- когда вы используете bot.debug_user_data = True, в вашей консоле выведится User, ID, Chat_id and Username
+
+# send_message / answer_message
+```
+def testOne():
+    print("GOOD")
+    bot.send_message("TEST1")
 
-затем
-из Library_Fast_Bot импортируйте бота
+async def testTwo(update: Update, context: : ContextTypes.DEFAULT_TYPE):
+    bot.send_message("TEST2")
 
-затем
-bot.token = "ваш токен"
+def optTwo():
+    bot.answer_message("GOOD2")
 
-в конце вам нужно добавить
-bot.run()
-приимер кода
-from Library_Fast_Botи import bot
- bot.token = "ваш токен" bot.clickStart("ваш текст") bot.run()
+def optTest():
+  bot.send_message("msg", 123)
 
-Обзор
+bot.start_bot_btn("Hello :)", ["opt", "opt2"])
 
-Класс TelegramBot предоставляет комплексную платформу для создания ботов Telegram с поддержкой:
+bot.if_message("opt", testOne)
+bot.if_message("t2", TestTwo)
+bot.if_message("opt2", optTwo)
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+- send_message -> функция для отправки сообщение в чат 
+- answer_message -> функция для отправки сообщение в чат с ответом на сообщения пользователя  
+- (вы можете использовать обычные функции для использование send_message() и answer_message() и также с параметрами update, context)
+- bot.send_message("msg", 123) отправка сообщения только на этот chat id (123 <- chat id)
 
-Обработки команд
+# добавление команд и подсказок для них (add_command() / add_hint_command())
+```
 
-Встроенных клавиатур
+add_command("command1", "команда 1 делает что-то") # теперь при написание /command1 будет выводится сообщение которые во 2-ых кавычках (можно также написать функцию ТОЛЬКО БЕЗ -> () )
+add_command("command2", func)
 
-Клавиатуры для ответа
+add_hint_command("command1", "подсказка для команды 1") # теперь при нажатие на кнопку меню появиться подсказка для command1, во 2-ых кавычках будет показываться, что делает команда
+```
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+функции для создания команд
 
-Пользовательские сессии
 
-История навигации по кнопкам
-
-Обработчики сообщений
-python для инициализации
-
-bot = TelegramBot(токен=Нет)
-
-токен: Дополнительный токен Telegram-бота (также может быть установлен с помощью переменной окружения TELEGRAM_BOT_TOKEN)
-Базовая конфигурация Запускает сообщение на python
-
-Просто запустите сообщение
-бота.Нажмите "Начать" ("Привет! Я бот").
-
-Начните с встроенных кнопок
-bot.clickStartUnderBtn("Добро пожаловать!", ("Кнопка 1", "обратный вызов1"), ("Кнопка 2", "обратный вызов2"))
-
-Начните с ответа клавиатурного
-бота.Нажмите STARTBTN("Главное меню", "Опция 1", "Опция 2")
-
-Обработка команд Добавление команд python
-
-Добавить команду с
-ботом-ответчиком.add_command("справка", "Вот некоторая справочная информация")
-
-Добавить команду с
-ботом-ответчиком.add_command("информация", лямбда-обновление, ctx: "Информационный ответ")
-
-Добавить описание команды (для /help)
-bot.add_hint_command("справка", "Получение справочной информации")
-
-Удалить команды python
-
-Удалить конкретную команду
-bot.clearCommand("справка")
-
-Удалите все команды
-bot.clearCommand()
-
-Обработка текстовых сообщений на python
-
-Ответьте на точное совпадение сообщений
-bot.if_message("привет", "Всем привет!")
-
-Ответьте обратным вызовом
-bot.if_message("время", лямбда-обновление, ctx: f"Текущее время: {datetime.now()}")
-
-Глобальный резервный ответ python
-
-Обработает любое несогласованное сообщение
-бота.global_response = "Я этого не понял"
-
-Управление встроенными кнопками python
-
-Добавьте кнопки под конкретным сообщением
-бота.add_buttonUnderMessage("Выберите опцию:", ("Опция 1", "opt1"), ("Опция 2", "opt2"))
-
-Или с помощью add_button
-bot.add_button("Текст кнопки", "ответ", after_message="инициирующее сообщение", inline=True)
-
-Кнопки клавиатуры для ответа на python
-
-Добавить кнопки клавиатуры для ответа
-bot.add_button("Текст кнопки", "ответ", after_message="триггерное сообщение")
-
-Обработчики кнопок на python
-
-Обрабатывать нажатия кнопок
-bot.button_handlers["opt1"] = "Вы выбрали вариант 1" bot.button_handlers["opt2"] = лямбда-обновление, ctx: "Ответ на обратный вызов"
-
-Удалить кнопки python
-
-Удалить все кнопки
-bot.clearBtn()
-
-Удалить кнопки под конкретным сообщением
-del_btn = bot.del_btn("текст сообщения") дождаться del_btn(обновление, контекст)
-
-Удалить клавиатуру
-ответа del_keyboard = bot.del_reply_keyboard(), дождаться del_keyboard(обновление, контекст)
-
-Пользовательские сессии python
-
-Хранить пользовательские данные
-bot.set_user_data(идентификатор пользователя, "ключ", "значение")
-
-Получить
-значение пользовательских данных = bot.get_user_data(идентификатор пользователя, "ключ", по умолчанию=Нет)
-
-Группы кнопок python
-
-Создать группу кнопок
-bot.create_button_group("параметры")
-
-Добавить кнопку в группу
-обратного вызова = bot.add_to_button_group("параметры", "Выбор 1", "ответ 1")
-
-Расширенные возможности История навигации
-
-Бот автоматически ведет историю навигации по кнопкам для каждого пользователя, что позволяет выполнять функцию "возврата". Обработка ошибок
-
-Бот включает встроенную обработку ошибок, которая игнорирует ошибки с пустым текстом. Режим отладки python
-
-bot.debug_user_data = True # Выводит информацию о взаимодействии с пользователем
-
-Запускаем бота на python
-
-Запускаем бота
-bot.run()
-
-Пример использования на python
-
-Инициализируем бота
-bot = TelegramBot()
-
-Настройте запуск сообщения с помощью кнопок
-bot.clickStartUnderBtn("Добро пожаловать в мой бот!", ("Справка", "help_btn"), ("Информация", "info_btn"))
-
-Добавить обработчики кнопок
-bot.button_handlers["help_btn"] = "Справочная информация здесь" bot.button_handlers["info_btn"] = лямбда-обновление, ctx: f"Информация о боте в {datetime.now()}"
-
-Добавить команду
-bot.add_command("запуск", "Перезапуск бота...") bot.add_hint_command("запуск", "Перезапуск бота")
-
-Добавьте обработчик сообщений
-bot.if_message("привет", "Всем привет!")
-
-Запустите бота
-bot.run()
-
-Записи
-
-Бот автоматически обрабатывает:
-
-    Регистрацию команды в Telegram
-
-    События, связанные с нажатием кнопки
-
-    Анализ сообщений
-
-    Управление сессиями пользователей
-
-Все текстовые сравнения выполняются без учета регистра.
-
-Фреймворк включает защиту от ошибок в пустых сообщениях.
-в конце вам нужно добавить - bot.run()
-создано с помощью DeepSeek
+# бот создан для быстрого написания небольших telegram ботов. 
