@@ -94,6 +94,8 @@ print(bot.get_user_username()) # get the user's username
 
 print(bot.get_user_full_name()) # get the full username
 
+print(bot.get_user_chat_id()) # get chat id
+
 print(bot.get_user_info()) # output to the console User, ID, Chat_id, Username -> only then, you will call the function
 ```
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
@@ -234,6 +236,8 @@ print(bot.get_user_id) # получить id пользователя
 print(bot.get_user_username()) # получить username пользователя
 
 print(bot.get_user_full_name()) # получить полное имя пользователя
+
+print(bot.get_user_chat_id()) # получить chat id
 
 print(bot.get_user_info()) # вывести в консоль User, ID, Chat_id, Username -> только тогда, вы вызовите функцию
 ```
