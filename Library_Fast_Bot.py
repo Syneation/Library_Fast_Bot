@@ -46,7 +46,11 @@ class TelegramBot:
         self._current_context = None
         self._current_chat_id = None
 
-        self._tmp_chat_id = None # for chat id user chat
+        # for debug chat_id, user_name, username and full_name
+        self._tmp_chat_id = None
+        self._tmp_user_name = None
+        self._tmp_username = None
+        self._tmp_full_name = None
 
         self.debug_user_data = False
         self._current_user = None
@@ -105,7 +109,6 @@ class TelegramBot:
         self.start_message = text
 
     """command before start"""
-
     def start_bot_btn(self, text: str, buttons: Union[Callable, list]):
         self.start_message = text
         self._initial_start_message = text
@@ -196,12 +199,8 @@ class TelegramBot:
         await self._current_context.bot.send_message(chat_id=chat_id, text=text)
 
     def send_message(self, text: str, chat_id: int = None):
-        """Упорядоченная отправка сообщений"""
+        """Orderly sending of messages"""
         chat_id = chat_id or self._current_chat_id
-        # if not chat_id:
-        #     if self.debug_LBF_and_code:
-        #         print(f"Error send_message: chat_id -> None!")
-        #
 
         if hasattr(self, '_current_context') and self._current_context:
             asyncio.create_task(self._send_message_ordered(chat_id, text, update=Update))
@@ -307,7 +306,7 @@ class TelegramBot:
 
             self.pending_message[current_chat_id] = []
 
-    """End Send And answerForMessage and delete and edit"""
+    """End Send And answer For Message and delete and edit"""
 
     """btn add"""
 
@@ -338,7 +337,7 @@ class TelegramBot:
                     ]
                     reply_markup = InlineKeyboardMarkup(keyboard)
                 else:
-                    # Для обычных кнопок
+                    # For regular buttons
                     keyboard = [[KeyboardButton(text)] for text, _ in self.buttons]
                     reply_markup = ReplyKeyboardMarkup(
                         keyboard,
@@ -386,18 +385,18 @@ class TelegramBot:
         if not message.strip():
             raise ValueError("Error add_button: please input a message")
 
-        # Сохраняем начальное состояние
+        # Saving the initial state
         self._initial_start_message = message
         self._initial_buttons = []
         self._initial_buttons_inline = False
 
-        # Устанавливаем текущее состояние
+        # Setting the current state
         self.start_message = message
         self.buttons = []
         self.message_callbacks.clear()
         self.inline = False
 
-        # Обрабатываем кнопки
+        # Processing the buttons
         for btn in buttons:
             if isinstance(btn, tuple) and len(btn) == 2:
                 btn_text, handler = btn
@@ -410,13 +409,13 @@ class TelegramBot:
                 self.message_callbacks[btn_text.lower()] = (self._wrap_callback(lambda: None), (), {})
                 self._initial_buttons.append((btn_text, btn_text))
 
-        # Принудительное обновление интерфейса
+        # Forced interface update
         if hasattr(self, '_current_update') and self._current_update:
             if self._current_update.message:
                 asyncio.create_task(self._show_buttons(message))
 
     async def _show_buttons(self, message: str):
-        """Показывает кнопки в текущем чате"""
+        """Shows buttons in the current chat"""
         try:
             keyboard = [[KeyboardButton(text)] for text, _ in self.buttons]
             reply_markup = ReplyKeyboardMarkup(
@@ -481,9 +480,14 @@ class TelegramBot:
 
 
     """start"""
-
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
+            """get user data"""
+            self._tmp_username = update.effective_user.username
+            self._tmp_user_name = update.effective_user.first_name
+            self._tmp_full_name = update.effective_user.full_name
+            self._tmp_chat_id = update.effective_chat.id
+
             # Restore initial state
             if hasattr(self, '_initial_buttons'):
                 self.buttons = self._initial_buttons.copy()
@@ -538,8 +542,8 @@ class TelegramBot:
                 handler = self.buttons_handlers[callback_data]
                 await handler(update, context)
             except Exception as e:
-                print(f"Error in button handler: {e}")
-                await query.message.reply_text("Произошла ошибка при обработке команды")
+                print(f"Error in button_click handler: {e}")
+                await query.message.reply_text("An error occurred while processing the command")
 
     """Command if_message"""
     def if_message(self, message: Union[str, List[str]], response: Union[Callable, str, None] = None, *args, **kwargs):
@@ -562,12 +566,13 @@ class TelegramBot:
     @property
     def get_user_full_name(self):
         if self._current_user:
-            return self._current_user.full_name if self._current_user else None
+            return self._tmp_full_name
         return None
 
     def get_user_name(self):
         if self._current_user:
-            return self._current_user.first_name
+            return self._tmp_user_name
+
         return None
 
     def get_user_id(self):
@@ -577,7 +582,12 @@ class TelegramBot:
 
     def get_user_username(self):
         if self._current_user:
-            return self._current_user.username
+            return self._tmp_username
+        return None
+
+    def get_user_chat_id(self):
+        if self._current_user:
+            return self._tmp_chat_id
         return None
 
     def get_user_info(self):
@@ -650,7 +660,6 @@ Username: @{self._current_user.username}
     """Text Message Handler"""
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         self.current_user_text = update.message.text.lower()
-        self._tmp_chat_id = update.effective_chat.id
 
         self._current_update = update
         self._current_context = context
