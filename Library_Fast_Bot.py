@@ -51,6 +51,7 @@ class TelegramBot:
         self._tmp_user_name = None
         self._tmp_username = None
         self._tmp_full_name = None
+        self._tmp_user_id = None
 
         self.debug_user_data = False
         self._current_user = None
@@ -130,7 +131,7 @@ class TelegramBot:
                     self.message_callbacks[btn_text.lower()] = (self._wrap_callback(lambda: None), (), {})
 
                     if len(processed_buttons) > 16:
-                        raise ValueError("Max 16 buttons!")
+                        raise ValueError("Error start_bot_btn: max 16 buttons!")
 
             self.buttons = processed_buttons
             self._initial_buttons = processed_buttons.copy()
@@ -487,6 +488,7 @@ class TelegramBot:
             self._tmp_user_name = update.effective_user.first_name
             self._tmp_full_name = update.effective_user.full_name
             self._tmp_chat_id = update.effective_chat.id
+            self._tmp_user_id = update.effective_user.id
 
             # Restore initial state
             if hasattr(self, '_initial_buttons'):
@@ -565,28 +567,28 @@ class TelegramBot:
     """get info about user"""
     @property
     def get_user_full_name(self):
-        if self._current_user:
+        if self._current_user or self._tmp_full_name:
             return self._tmp_full_name
         return None
 
     def get_user_name(self):
-        if self._current_user:
+        if self._current_user or self._tmp_user_name:
             return self._tmp_user_name
 
         return None
 
     def get_user_id(self):
-        if self._current_user:
-            return self._current_user.id
+        if self._current_user or self._tmp_user_id:
+            return self._tmp_user_id
         return None
 
     def get_user_username(self):
-        if self._current_user:
+        if self._current_user or self._tmp_username:
             return self._tmp_username
         return None
 
     def get_user_chat_id(self):
-        if self._current_user:
+        if self._current_user or self._tmp_chat_id:
             return self._tmp_chat_id
         return None
 
@@ -611,7 +613,7 @@ Username: @{self._current_user.username}
         self.repl_msg_user = reply_msg_user
 
     """add command"""
-    def add_command(self, command: str = "/test", answer: Union[Callable, str, None] = None, *args, **kwargs):
+    def add_command(self, command: str, answer: Union[Callable, str, None] = None, *args, **kwargs):
         """
         Adds a simple command that outputs text
         :param command: command name(for example "/help")
@@ -731,12 +733,15 @@ Username: @{self._current_user.username}
         async def set_commands():
             if self.command_hints:
                 commands_list = [BotCommand(command[1:], description)
-                                 for command, description in self.command_hints.items()]
+                                for command, description in self.command_hints.items()]
                 await application.bot.set_my_commands(commands_list)
+
+        loop.create_task(set_commands())
 
         application.add_handler(CommandHandler("start", self.start))
         application.add_handler(CallbackQueryHandler(self.button_click))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
+
         print("the bot is running")
         application.run_polling()
 
