@@ -699,12 +699,12 @@ Username: @{self._current_user.username}
                 await update.message.reply_text(response)
 
         elif self.default_message is not None:
-            if self.repl_msg_user:
+            if self.repl_msg_user :
                 await update.message.reply_text(
                     text=self.default_message,
                     reply_to_message_id=update.message.message_id
                 )
-            elif self.repl_msg_user and self.is_default_send_msg:
+            elif self.is_default_send_msg:
                 await update.message.reply_text(self.default_message)
             else:
                 print(self.default_message)
