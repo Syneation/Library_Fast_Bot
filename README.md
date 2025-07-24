@@ -55,10 +55,10 @@ bot.if_message("message", lambda: print("lambda message response"))
 #2 Test the response
 bot.if_message ("message", "reply to message")
 
-#3 Registering
-the def test() function:
-print("reply to message")
-...
+#3 Registering function
+def test():
+    print("reply to message")
+    ...
 
 bot.if_message("message", test)
 ```
@@ -108,7 +108,7 @@ def testOne():
     print("GOOD")
     bot.send_message("TEST1")
 
-async def testTwo(update: Update, context: : ContextTypes.DEFAULT_TYPE):
+async def testTwo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot.send_message("TEST2")
 
 def optTwo():
