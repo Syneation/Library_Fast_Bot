@@ -36,6 +36,7 @@ bot.start_bot_btn_inline("message", [("button 3", funcThree), ("button 4", funcF
 - ( start_bot() ) -> after pressing the "Start" button, a message is displayed
 - ( start_bot_btn() ) -> after clicking, a message is displayed, as well as buttons
 - ( start_bot_btn_inline() ) -> after clicking, a message is displayed, as well as inline buttons (if you specify bot.add_buttons_inline() in the function -> then you will change the message to a new one )
+- the inline button will not work answer_message() and just add_buttons()
 
 # adding buttons (add_buttons() / add_buttons_inline() )
 ```
@@ -46,6 +47,7 @@ bot.add_buttons_inline("message 2", [("button3", funcThree), ("button4", funcFou
 - add buttons better in functions
 - bot.add_buttons() -> when writing this function, 2 regular buttons are created (up to 16 can be created) -> when clicked, the functions will be called
 - bot.add_buttons_inline() -> when writing this function, 2 inline buttons are created -> when clicked, the functions will be called (if the function has add_buttons_inline(), then the text will change)
+- in add_buttons_inline(), you do not need to write to the answer_message() -> function because it will not work as add_buttons()
 
 # if_message
 ```
@@ -179,6 +181,7 @@ bot.start_bot_btn_inline("сообщение", [("кнопка 3", funcThree), (
 - ( start_bot() ) -> после нажатия кнопки "Старт" выводиться сообщение
 - ( start_bot_btn() ) -> после нажатие выводиться сообщение, а также и кнопки
 - ( start_bot_btn_inline() ) -> после нажатие выводиться сообщение, а также и inline кнопки (если в функции вы укажите bot.add_buttons_inline() -> тогда у вас поменяется сообщение на новое )
+- в inline кнопка не будет работать answer_message() и add_buttons()
 
 # добавление кнопок (add_buttons() / add_buttons_inline() )
 ```
@@ -189,6 +192,7 @@ bot.add_buttons_inline("сообщение 2", [("кнопка3", funcThree), ("
 - кнопки добавляить лучше в функциях
 - bot.add_buttons() -> при написание этой функции создются 2 обычный кнопки (можно создать до 16) -> при нажатие на которых, будут вызыватся функции
 - bot.add_buttons_inline() -> при написание этой функции создются 2 inline кнопки -> при нажатие на которых, будут вызыватся функции (если в функции будет add_buttons_inline() тогда текст поменяется)
+- в add_buttons_inline() не надо писать в функция answer_message() -> так как не будет работать, как и add_buttons()
 
 # if_message
 ```
