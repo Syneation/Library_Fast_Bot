@@ -210,7 +210,7 @@ class TelegramBot:
         """Cleanup when bot stops"""
         self._should_process = False
 
-        # Отменяем задачу обработки сообщений
+        # Canceling the message processing task
         if self._processing_task:
             self._processing_task.cancel()
             try:
@@ -221,7 +221,7 @@ class TelegramBot:
                 if self.debug_LBF_and_code:
                     print(f"Error stopping message processor: {e}")
 
-        # Очищаем очередь
+        # Clearing the queue
         if hasattr(self, '_message_queue') and self._message_queue:
             while not self._message_queue.empty():
                 self._message_queue.get_nowait()
@@ -479,6 +479,48 @@ class TelegramBot:
 
     """End add btn"""
 
+    """get info about user"""
+
+    @property
+    def get_user_full_name(self):
+        if self._current_user or self._tmp_full_name:
+            return self._tmp_full_name
+        return None
+
+    def get_user_name(self):
+        if self._current_user or self._tmp_user_name:
+            return self._tmp_user_name
+
+        return None
+
+    def get_user_id(self):
+        if self._current_user or self._tmp_user_id:
+            return self._tmp_user_id
+        return None
+
+    def get_user_username(self):
+        if self._current_user or self._tmp_username:
+            return self._tmp_username
+        return None
+
+    def get_user_chat_id(self):
+        if self._current_user or self._tmp_chat_id:
+            return self._tmp_chat_id
+        return None
+
+    def get_user_info(self):
+        if self._current_user:
+            res = f"""
+    ======================================================================
+    User: {self._current_user.full_name}
+    ID: {self._current_user.id}
+    Chat_id: {self._tmp_chat_id}
+    Username: @{self._current_user.username}
+    ======================================================================
+                """
+            return res
+        return None
+
 
     """start"""
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -489,13 +531,31 @@ class TelegramBot:
             self._tmp_full_name = update.effective_user.full_name
             self._tmp_chat_id = update.effective_chat.id
             self._tmp_user_id = update.effective_user.id
+            
+            # get name user (if you need)
+            tmp_check_get_user = False
+
+            if "get_username" in self.start_message:
+                self.start_message = self.start_message.replace("get_username", self._tmp_username, 1)
+                tmp_check_get_user = True
+
+            if "get_user_name" in self.start_message:
+                self.start_message = self.start_message.replace("get_user_name", self._tmp_user_name, 1)
+                tmp_check_get_user = True
+
+            if "get_user_fullname" in self.start_message:
+                self.start_message = self.start_message.replace("get_user_fullname", self._tmp_full_name, 1)
+                tmp_check_get_user = True
+
 
             # Restore initial state
-            if hasattr(self, '_initial_buttons'):
+            if tmp_check_get_user:
+                pass
+            elif hasattr(self, '_initial_buttons'):
                 self.buttons = self._initial_buttons.copy()
-            if hasattr(self, '_initial_buttons_inline'):
+            elif hasattr(self, '_initial_buttons_inline'):
                 self.inline = self._initial_buttons_inline
-            if hasattr(self, '_initial_start_message'):
+            elif hasattr(self, '_initial_start_message'):
                 self.start_message = self._initial_start_message
 
             # For inline buttons
@@ -564,46 +624,7 @@ class TelegramBot:
             else:
                 return self.current_user_text == message.lower()
 
-    """get info about user"""
-    @property
-    def get_user_full_name(self):
-        if self._current_user or self._tmp_full_name:
-            return self._tmp_full_name
-        return None
 
-    def get_user_name(self):
-        if self._current_user or self._tmp_user_name:
-            return self._tmp_user_name
-
-        return None
-
-    def get_user_id(self):
-        if self._current_user or self._tmp_user_id:
-            return self._tmp_user_id
-        return None
-
-    def get_user_username(self):
-        if self._current_user or self._tmp_username:
-            return self._tmp_username
-        return None
-
-    def get_user_chat_id(self):
-        if self._current_user or self._tmp_chat_id:
-            return self._tmp_chat_id
-        return None
-
-    def get_user_info(self):
-        if self._current_user:
-            res = f"""
-======================================================================
-User: {self._current_user.full_name}
-ID: {self._current_user.id}
-Chat_id: {self._tmp_chat_id}
-Username: @{self._current_user.username}
-======================================================================
-            """
-            return res
-        return None
 
 
     """default message"""
