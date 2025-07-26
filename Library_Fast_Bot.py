@@ -1,5 +1,7 @@
 import asyncio
 import os
+from http.client import responses
+from keyword import kwlist
 
 from telegram import (
     Update,
@@ -27,15 +29,17 @@ from typing import (
     List,
 )
 
+
 class TelegramBot:
     """Initialize bot setting"""
+
     def __init__(self, token=None):
         self.token = token or os.getenv("TOKEN")
         self.start_message = "Hello, I'm Bot :)."
-        self._initial_buttons = None # for save start  btn
-        self._initial_buttons_inline = None # for save start btn inline
-        self._initial_start_message = None # for save start msg
-        self.last_message = {} # last message for delete or edit message
+        self._initial_buttons = None  # for save start  btn
+        self._initial_buttons_inline = None  # for save start btn inline
+        self._initial_start_message = None  # for save start msg
+        self.last_message = {}  # last message for delete or edit message
 
         self.debug_LBF_and_code = False
 
@@ -65,13 +69,13 @@ class TelegramBot:
 
         self._msg_to_send = None
         self._msg_to_send_answer = None
-        self.pending_message = {} # For storing messages by chat_id
+        self.pending_message = {}  # For storing messages by chat_id
         self.message_callbacks = {}
         self.current_user_text = None
         self.message_handlers = []
         self.buttons = []
-        self.inline = False # checking for buttons above the text or just buttons
-        self.buttons_handlers = {} # for save callback_data
+        self.inline = False  # checking for buttons above the text or just buttons
+        self.buttons_handlers = {}  # for save callback_data
 
     # Wrapper to support functions without parameters
     def _wrap_callback(self, callback):
@@ -106,10 +110,12 @@ class TelegramBot:
         return wrapped
 
     """After click start"""
+
     def start_bot(self, text):
         self.start_message = text
 
     """command before start"""
+
     def start_bot_btn(self, text: str, buttons: Union[Callable, list]):
         self.start_message = text
         self._initial_start_message = text
@@ -122,7 +128,8 @@ class TelegramBot:
                     btn_text, handler = item
                     processed_buttons.append((btn_text, btn_text))
                     # Register the handler properly
-                    self.message_callbacks[btn_text.lower()] = (self._wrap_callback(handler), (), {})
+                    if btn_text.lower() not in self.message_callbacks:
+                        self.message_callbacks[btn_text.lower()] = (self._wrap_callback(handler), (), {})
                 else:
                     # If just a string is passed
                     btn_text = item[0] if isinstance(item, tuple) else item
@@ -194,14 +201,14 @@ class TelegramBot:
     async def _send_message_ordered(self, chat_id: int, text: str, update: Update):
         """Sends messages in order with a delay"""
         if not chat_id:
-            chat_id = self._tmp_chat_id # get chat id user
+            chat_id = self._tmp_chat_id  # get chat id user
 
         await asyncio.sleep(0.3)  # Slight delay between messages
         await self._current_context.bot.send_message(chat_id=chat_id, text=text)
 
     def send_message(self, text: str, chat_id: int = None):
         """Orderly sending of messages"""
-        chat_id = chat_id or self._current_chat_id
+        chat_id = chat_id or self._current_chat_id or self._tmp_chat_id
 
         if hasattr(self, '_current_context') and self._current_context:
             asyncio.create_task(self._send_message_ordered(chat_id, text, update=Update))
@@ -265,7 +272,7 @@ class TelegramBot:
         if not hasattr(self, '_current_update') or not self._current_update:
             return
 
-        current_chat_id = self._current_update.effective_chat.id
+        current_chat_id = self._current_update.effective_chat.id or self._tmp_chat_id
 
         # send without chat id
         if hasattr(self, '_msg_to_send') and self._msg_to_send:
@@ -394,7 +401,6 @@ class TelegramBot:
         # Setting the current state
         self.start_message = message
         self.buttons = []
-        self.message_callbacks.clear()
         self.inline = False
 
         # Processing the buttons
@@ -402,7 +408,8 @@ class TelegramBot:
             if isinstance(btn, tuple) and len(btn) == 2:
                 btn_text, handler = btn
                 self.buttons.append((btn_text, btn_text))
-                self.message_callbacks[btn_text.lower()] = (self._wrap_callback(handler), (), {})
+                if btn_text.lower() not in self.message_callbacks:
+                    self.message_callbacks[btn_text.lower()] = (self._wrap_callback(handler), (), {})
                 self._initial_buttons.append((btn_text, btn_text))
             else:
                 btn_text = btn[0] if isinstance(btn, tuple) else btn
@@ -521,8 +528,8 @@ class TelegramBot:
             return res
         return None
 
-
     """start"""
+
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             """get user data"""
@@ -531,7 +538,7 @@ class TelegramBot:
             self._tmp_full_name = update.effective_user.full_name
             self._tmp_chat_id = update.effective_chat.id
             self._tmp_user_id = update.effective_user.id
-            
+
             # get name user (if you need)
             tmp_check_get_user = False
 
@@ -547,7 +554,6 @@ class TelegramBot:
                 self.start_message = self.start_message.replace("get_user_fullname", self._tmp_full_name, 1)
                 tmp_check_get_user = True
 
-
             # Restore initial state
             if tmp_check_get_user:
                 pass
@@ -557,6 +563,30 @@ class TelegramBot:
                 self.inline = self._initial_buttons_inline
             elif hasattr(self, '_initial_start_message'):
                 self.start_message = self._initial_start_message
+
+            # for hint commands
+            if self.command_hints:
+                commands_list = []
+                for command, description in self.command_hints.items():
+                    if command in self.commands:
+                        commands_list.append(BotCommand(command[1:], description))
+                        if self.debug_LBF_and_code:
+                            print(f"Adding command: {command[1:]} - {description}")
+                    else:
+                        print(f"Warning: Command {command} has hint but no handler!")
+
+                if commands_list:
+                    try:
+                        await context.bot.set_my_commands(commands_list)
+                        if self.debug_LBF_and_code:
+                            print("Commands menu updated successfully from /start")
+                            print("Current commands:", [cmd.command for cmd in commands_list])
+                    except Exception as e:
+                        print(f"Failed to set commands from /start: {e}")
+                        if hasattr(e, 'message'):
+                            print(f"Error start details: {e.message}")
+                        else:
+                            print(f"Error start details: {str(e)}")
 
             # For inline buttons
             if self.inline and self.buttons:
@@ -608,32 +638,32 @@ class TelegramBot:
                 await query.message.reply_text("An error occurred while processing the command")
 
     """Command if_message"""
+
     def if_message(self, message: Union[str, List[str]], response: Union[Callable, str, None] = None, *args, **kwargs):
         if response is not None:
-            wrapped_response = self._wrap_callback(response) # Wrapping the callback in our function
+            wrapped_response = self._wrap_callback(response)  # Wrapping the callback in our function
 
-            if isinstance(message, list): # If message is a list of words
+            if isinstance(message, list):  # If message is a list of words
                 for msg in message:
                     self.message_callbacks[msg.lower()] = (self._wrap_callback(response), args, kwargs)
             else:
                 self.message_callbacks[message.lower()] = (response, args, kwargs)
-         # if there is no message verification
+        # if there is no message verification
         else:
             if isinstance(message, list):
                 return self.current_user_text in [m.lower() for m in message]
             else:
                 return self.current_user_text == message.lower()
 
-
-
-
     """default message"""
+
     def set_default_message(self, message: str, is_def_send_msg: bool = False, reply_msg_user: bool = False):
         self.default_message = message
         self.is_default_send_msg = is_def_send_msg
         self.repl_msg_user = reply_msg_user
 
     """add command"""
+
     def add_command(self, command: str, answer: Union[Callable, str, None] = None, *args, **kwargs):
         """
         Adds a simple command that outputs text
@@ -644,6 +674,7 @@ class TelegramBot:
             command = '/' + command
 
         """handler for command"""
+
         async def command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             self._current_update = update
             self._current_context = context
@@ -670,6 +701,7 @@ class TelegramBot:
         self.commands[command] = command_handler
 
     """add hint command"""
+
     def add_hint_command(self, command: str, info: str):
         """
         Adds a hint for the command
@@ -678,9 +710,21 @@ class TelegramBot:
         """
         if not command.startswith('/'):
             command = '/' + command
+
+        if command not in self.commands:
+            raise ValueError(f"Error add_hint_command: command {command} not found. Register command first with add_command()")
+
+        command_name = command[1:]
+        if not command_name.islower() or not command_name.replace('_', '').isalnum():
+            raise ValueError(f"Error add_hint_command: invalid command name: {command_name}. Only lowercase letter, digits and underscores are allowed.")
+
+        if len(info) < 3 or len(info) > 256:
+            raise ValueError("Error add_hint_command: description must be between 3 and 256 characters long.")
+
         self.command_hints[command] = info
 
     """Text Message Handler"""
+
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         self.current_user_text = update.message.text.lower()
 
@@ -701,26 +745,25 @@ class TelegramBot:
             print(user_info)
             print("=" * 70 + "\n")
 
-        # for send message
-        # process the incoming message
-        if self.current_user_text in self.message_callbacks:
+        # We check the handlers in order of priority:
+        # 1. First, the button handlers
+        # 2. Then the if_message handlers
+        # 3. At the end, the default message is
+
+        # Check if the message is the text of the button
+        is_button_text = any(text.lower() == self.current_user_text for text, _ in self.buttons)
+
+        if is_button_text and self.current_user_text in self.message_callbacks:
+            # handler click button
             response, args, kwargs = self.message_callbacks[self.current_user_text]
-
-            """handle message (send_message and send_message_answer)"""
-            if callable(response):
-                try:
-                    if asyncio.iscoroutinefunction(response):
-                        await response(update, context, *args, **kwargs)
-                    else:
-                        response(*args, **kwargs)
-                except TypeError:
-                    response()
-
-            elif isinstance(response, str):
-                await update.message.reply_text(response)
-
+            await self._process_response(response, args, kwargs)
+        elif self.current_user_text in self.message_callbacks:
+            # handler message with if_message
+            response, args, kwargs = self.message_callbacks[self.current_user_text]
+            await self._process_response(response, args, kwargs)
         elif self.default_message is not None:
-            if self.repl_msg_user :
+            # default message
+            if self.is_default_send_msg and self.repl_msg_user:
                 await update.message.reply_text(
                     text=self.default_message,
                     reply_to_message_id=update.message.message_id
@@ -730,9 +773,26 @@ class TelegramBot:
             else:
                 print(self.default_message)
 
-        # then process pending messages
         await self._process_pending_message()
+
+    async def _process_response(self, response, args, kwargs):
+        """handler response from message_callbacks"""
+        if callable(response):
+            try:
+                if asyncio.iscoroutinefunction(response):
+                    await response(self._current_update, self._current_context, *args, **kwargs)
+                else:
+                    response(*args, **kwargs)
+            except TypeError:
+                if asyncio.iscoroutinefunction(response):
+                    await response()
+                else:
+                    response()
+        elif isinstance(response, str):
+            await self._current_update.message.reply_text(response)
+
     """run"""
+
     def run(self):
         if not self.token:
             return ValueError("Token is not set")
@@ -750,21 +810,13 @@ class TelegramBot:
         for command, handler in self.commands.items():
             application.add_handler(CommandHandler(command[1:], handler))
 
-        # add hint for command
-        async def set_commands():
-            if self.command_hints:
-                commands_list = [BotCommand(command[1:], description)
-                                for command, description in self.command_hints.items()]
-                await application.bot.set_my_commands(commands_list)
-
-        loop.create_task(set_commands())
-
         application.add_handler(CommandHandler("start", self.start))
         application.add_handler(CallbackQueryHandler(self.button_click))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
 
         print("the bot is running")
         application.run_polling()
+
 
 """For use bot. Example: bot.start()"""
 bot = TelegramBot()
