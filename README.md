@@ -31,7 +31,8 @@ this is the basic structure for running a bot, where it says #here is your code,
 bot.start_bot("message") # simply outputs a message to the chat after writing the command (/start) or when the start
 bot button is pressed.start_bot_btn("message", [("button 1", func), ("button 2", functionwo)]) # after the /start command, it outputs a message with the usual buttons (the functions specify what to do after pressing the button)
 bot.start_bot_btn_inline("message", [("button 3", funcThree), ("button 4", funcFour)]) # after the /start command, it displays a message with inline buttons (the functions specify what to do after pressing the button)
-
+```
+```
 # if you want to be able to display a message with the user's name when you click on start, then write
 bot.start_bot("message get_username") # simply outputs a message to the chat with the user's username, after writing the command (/start) or when the start
 bot button is pressed.start_bot_btn("message get_user_name", [("button 1", func), ("button 2", functionwo)]) # after the /start command, it displays a message with the user's name and the usual buttons (the functions specify what to do after pressing the button)
@@ -181,7 +182,8 @@ pip install python-telegram-bot
 bot.start_bot("сообщение") # просто выводит в чат сообщение, после написание команды (/start) или когда нажата кнопка start
 bot.start_bot_btn("сообщение", [("кнопка 1", func), ("кнопка 2", funcTwo)]) # после команды /start выводит сообщение с обычными кнопками (в функциях указывается, что делать после нажатие кнопки)
 bot.start_bot_btn_inline("сообщение", [("кнопка 3", funcThree), ("кнопка 4", funcFour)]) # после команды /start выводит сообщение с inline кнопками (в функциях указывается, что делать после нажатие кнопки)
-
+```
+```
 # если хотите, чтобы при нажатие на старт вы могло выводить сообщение с именем пользователя, то напишите
 bot.start_bot("сообщение get_username") # просто выводит в чат сообщение с username пользователя, после написание команды (/start) или когда нажата кнопка start
 bot.start_bot_btn("сообщение get_user_name", [("кнопка 1", func), ("кнопка 2", funcTwo)]) # после команды /start выводит сообщение с именем пользователя и обычными кнопками (в функциях указывается, что делать после нажатие кнопки)
