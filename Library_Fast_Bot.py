@@ -393,13 +393,8 @@ class TelegramBot:
         if not message.strip():
             raise ValueError("Error add_button: please input a message")
 
-        # Saving the initial state
-        self._initial_start_message = message
-        self._initial_buttons = []
-        self._initial_buttons_inline = False
-
         # Setting the current state
-        self.start_message = message
+
         self.buttons = []
         self.inline = False
 
@@ -410,12 +405,10 @@ class TelegramBot:
                 self.buttons.append((btn_text, btn_text))
                 if btn_text.lower() not in self.message_callbacks:
                     self.message_callbacks[btn_text.lower()] = (self._wrap_callback(handler), (), {})
-                self._initial_buttons.append((btn_text, btn_text))
             else:
                 btn_text = btn[0] if isinstance(btn, tuple) else btn
                 self.buttons.append((btn_text, btn_text))
                 self.message_callbacks[btn_text.lower()] = (self._wrap_callback(lambda: None), (), {})
-                self._initial_buttons.append((btn_text, btn_text))
 
         # Forced interface update
         if hasattr(self, '_current_update') and self._current_update:
@@ -553,6 +546,8 @@ class TelegramBot:
             if "get_user_fullname" in self.start_message:
                 self.start_message = self.start_message.replace("get_user_fullname", self._tmp_full_name, 1)
                 tmp_check_get_user = True
+
+
 
             # Restore initial state
             if tmp_check_get_user:
