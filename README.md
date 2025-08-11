@@ -139,10 +139,10 @@ bot.if_message("opt2", optTwo)
 
 # adding commands and hints for them (add_command() / add_hint_command())
 ```
-add_command("command1", "command 1 does something") # now, when writing /command1, a message will be displayed that is in 2nd quotes (you can also write a function ONLY WITHOUT -> () )
-add_command("command2", func)
+bot.add_command("command1", "command 1 does something") # now, when writing /command1, a message will be displayed that is in 2nd quotes (you can also write a function ONLY WITHOUT -> () )
+bot.add_command("command2", func)
 
-add_hint_command("command1", "hint for command 1") # now, when you click on the menu button, a prompt for command1 will appear, in the 2nd quotation marks it will show what the command is doing
+bot.add_hint_command("command1", "hint for command 1") # now, when you click on the menu button, a prompt for command1 will appear, in the 2nd quotation marks it will show what the command is doing
 ```
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
 functions for creating commands. The command prompts are updated every time you write /start (if it doesn't help, then clear the telegram cache)
@@ -291,10 +291,10 @@ bot.if_message("opt2", optTwo)
 # добавление команд и подсказок для них (add_command() / add_hint_command())
 ```
 
-add_command("command1", "команда 1 делает что-то") # теперь при написание /command1 будет выводится сообщение которые во 2-ых кавычках (можно также написать функцию ТОЛЬКО БЕЗ -> () )
-add_command("command2", func)
+bot.add_command("command1", "команда 1 делает что-то") # теперь при написание /command1 будет выводится сообщение которые во 2-ых кавычках (можно также написать функцию ТОЛЬКО БЕЗ -> () )
+bot.add_command("command2", func)
 
-add_hint_command("command1", "подсказка для команды 1") # теперь при нажатие на кнопку меню появиться подсказка для command1, во 2-ых кавычках будет показываться, что делает команда
+bot.add_hint_command("command1", "подсказка для команды 1") # теперь при нажатие на кнопку меню появиться подсказка для command1, во 2-ых кавычках будет показываться, что делает команда
 ```
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
 функции для создания команд. Подсказки для команд обновляются при каждом написание /start (если не помогло, тогда очистите кэш телеграмма) 
