@@ -547,12 +547,10 @@ class TelegramBot:
                 self.start_message = self.start_message.replace("get_user_fullname", self._tmp_full_name, 1)
                 tmp_check_get_user = True
 
-
-
             # Restore initial state
             if tmp_check_get_user:
                 pass
-            elif hasattr(self, '_initial_buttons'):
+            elif hasattr(self, '_initial_buttons') and self._initial_buttons is not None:
                 self.buttons = self._initial_buttons.copy()
             elif hasattr(self, '_initial_buttons_inline'):
                 self.inline = self._initial_buttons_inline
