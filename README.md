@@ -301,3 +301,4 @@ bot.add_hint_command("command1", "подсказка для команды 1") #
 
 
 # бот создан для быстрого написания небольших telegram ботов. 
+# Created with DeepSeek
